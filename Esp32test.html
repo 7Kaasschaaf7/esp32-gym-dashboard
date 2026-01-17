@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ESP32 Gym Motion</title>
+<style>
+body { background:#111; color:#0f0; font-family:Arial }
+#hud { position:absolute; top:10px; left:10px }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  Reps: <span id="reps">0</span><br>
+  Pitch: <span id="p">0</span><br>
+  ROM: <span id="rom">0</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152/build/three.min.js"></script>
+
+<script>
+const ws = new WebSocket("192.168.50.210/");
+
+let pitch = 0, roll = 0;
+
+ws.onmessage = e => {
+  const d = JSON.parse(e.data);
+  pitch = d.pitch;
+  roll = d.roll;
+  document.getElementById("reps").textContent = d.reps;
+  document.getElementById("p").textContent = pitch.toFixed(1);
+  document.getElementById("rom").textContent =
+    (d.rom_max - d.rom_min).toFixed(1);
+};
+
+// ===== THREE.JS =====
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const cube = new THREE.Mesh(
+  new THREE.BoxGeometry(),
+  new THREE.MeshNormalMaterial()
+);
+scene.add(cube);
+camera.position.z = 3;
+
+function animate(){
+  requestAnimationFrame(animate);
+  cube.rotation.x = pitch * Math.PI / 180;
+  cube.rotation.z = roll * Math.PI / 180;
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
